@@ -1,0 +1,6 @@
+indicators:
+  - code: NY.GDP.MKTP.CD
+    name: GDP
+
+  - code: SP.POP.TOTL
+    name: Population
