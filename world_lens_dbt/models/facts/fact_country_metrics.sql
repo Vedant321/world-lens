@@ -1,3 +1,13 @@
+WITH country_only AS (
+
+    SELECT *
+    FROM {{ ref('stg_world_bank_observations') }}
+
+    WHERE country_code IS NOT NULL
+      AND TRIM(country_code) <> ''
+
+)
+
 SELECT
     country_code,
     country_name,
@@ -38,7 +48,7 @@ SELECT
         END
     ) AS UNEMPLOYMENT
 
-FROM {{ ref('stg_world_bank_observations') }}
+FROM country_only
 
 GROUP BY
     country_code,
