@@ -2,15 +2,33 @@ version: 2
 
 models:
   - name: mart_country_analytics
-    description: Analytics mart containing business KPIs
+    description: Country-level analytics mart containing GDP per capita and GDP per capita growth metrics.
 
     columns:
       - name: country_code
+        description: World Bank country code.
         tests:
           - not_null
+
+      - name: country_name
+        description: Country name.
 
       - name: year
+        description: Observation year.
         tests:
           - not_null
 
+      - name: GDP
+        description: Gross Domestic Product in current USD.
+
+      - name: POPULATION
+        description: Total population.
+
       - name: gdp_per_capita
+        description: GDP divided by population.
+
+      - name: prev_year_gdp_per_capita
+        description: Previous year's GDP per capita for the same country.
+
+      - name: gdp_per_capita_growth_rate
+        description: Year-over-year percentage growth in GDP per capita.
