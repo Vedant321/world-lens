@@ -1,0 +1,9 @@
+version: 2
+
+sources:
+  - name: raw
+    database: WORLD_LENS
+    schema: RAW
+
+    tables:
+      - name: RAW_API_RESPONSES

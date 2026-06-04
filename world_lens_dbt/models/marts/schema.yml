@@ -1,0 +1,16 @@
+version: 2
+
+models:
+  - name: mart_country_analytics
+    description: Analytics mart containing business KPIs
+
+    columns:
+      - name: country_code
+        tests:
+          - not_null
+
+      - name: year
+        tests:
+          - not_null
+
+      - name: gdp_per_capita
