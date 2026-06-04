@@ -4,3 +4,12 @@ indicators:
 
   - code: SP.POP.TOTL
     name: Population
+
+  - code: SP.DYN.LE00.IN
+    name: Life Expectancy
+
+  - code: IT.NET.USER.ZS
+    name: Internet Users
+
+  - code: SL.UEM.TOTL.ZS
+    name: Unemployment

@@ -1,0 +1,14 @@
+version: 2
+
+models:
+  - name: fact_country_metrics
+    description: Country-year metrics pivoted into analytics-ready columns
+
+    columns:
+      - name: country_code
+        tests:
+          - not_null
+
+      - name: year
+        tests:
+          - not_null

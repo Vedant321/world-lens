@@ -1,41 +1,49 @@
-from src.db.snowflake_client import SnowflakeClient
-
-from src.config.settings import Settings
-
-# print(Settings.SNOWFLAKE_ACCOUNT)
-# print(Settings.SNOWFLAKE_USER)
-
-# client = SnowflakeClient()
-
-# conn = client.get_connection()
-
-# cursor = conn.cursor()
-
-# cursor.execute("SELECT CURRENT_VERSION()")
-
-# print(cursor.fetchone())
-
-# cursor.close()
-# conn.close()
-
-# from src.config.indicator_loader import load_indicators
-
-# indicators = load_indicators()
-
-# print(indicators)
-
 from src.config.indicator_loader import load_indicators
 from src.ingestion.world_bank_ingestor import WorldBankIngestor
+from src.db.snowflake_client import SnowflakeClient
+
+
+START_YEAR = 1960
+END_YEAR = 2000
 
 indicators = load_indicators()
 
 ingestor = WorldBankIngestor()
+snowflake_client = SnowflakeClient()
 
-first_indicator = indicators[0]
+for indicator in indicators:
 
-data = ingestor.fetch_indicator(first_indicator["code"])
+    indicator_code = indicator["code"]
 
-print(first_indicator)
-print(type(data))
-print(len(data))
-print(data[1][0])
+    if snowflake_client.already_loaded(
+        indicator_code,
+        START_YEAR,
+        END_YEAR
+    ):
+        print(
+            f"Skipping {indicator['name']} "
+            f"(already loaded)"
+        )
+        continue
+
+    payload = ingestor.fetch_indicator(
+        indicator_code,
+        START_YEAR,
+        END_YEAR
+    )
+
+    snowflake_client.insert_raw_payload(
+        indicator_code,
+        payload
+    )
+
+    rows_loaded = len(payload[1])
+
+    snowflake_client.record_success(
+        indicator_code,
+        START_YEAR,
+        END_YEAR,
+        rows_loaded
+    )
+
+    print(f"Loaded {indicator['name']}")
