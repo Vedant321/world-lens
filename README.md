@@ -1,28 +1,19 @@
-# World Lens: Global Economic Analytics Platform
+# 🌍 World Lens — Global Analytics Platform
 
-A production-style Data Engineering and Analytics Engineering project that ingests economic indicators from the World Bank API, stores raw data in Snowflake, transforms it with dbt, and produces analytics-ready datasets for business intelligence and country-level economic analysis.
+An end-to-end data engineering project that ingests World Bank economic and demographic data into Snowflake, transforms it into an analytics-ready star schema using dbt, and serves interactive insights through a Streamlit dashboard.
 
-The project demonstrates modern data platform concepts including ingestion pipelines, medallion-style modeling, data quality validation, analytics engineering, KPI development, and business-rule enforcement.
+## Overview
 
----
+World Lens demonstrates a modern analytics engineering workflow:
 
-## Project Overview
+* Automated data ingestion from the World Bank API
+* Cloud data warehouse powered by Snowflake
+* Data modeling with dbt
+* Star schema design with fact and dimension tables
+* Data quality testing and lineage tracking
+* Interactive analytics dashboard built with Streamlit
 
-World Lens enables exploration of global economic trends by collecting and transforming publicly available World Bank indicators into analytics-ready datasets.
-
-The platform currently tracks:
-
-* GDP
-* Population
-* Life Expectancy
-* Internet Usage
-* Unemployment Rate
-
-Using these indicators, the project derives business KPIs such as:
-
-* GDP Per Capita
-* Previous Year GDP Per Capita
-* GDP Per Capita Growth Rate
+The project follows industry-standard ELT architecture and mirrors the workflow used in modern data platforms.
 
 ---
 
@@ -30,340 +21,106 @@ Using these indicators, the project derives business KPIs such as:
 
 ```text
 World Bank API
-        │
-        ▼
+      │
+      ▼
 Python Ingestion Pipeline
-        │
-        ▼
-Snowflake RAW Layer
-(RAW_API_RESPONSES)
-        │
-        ▼
-dbt Staging Layer
-(stg_world_bank_observations)
-        │
-        ▼
-dbt Fact Layer
-(fact_country_metrics)
-        │
-        ▼
-dbt Analytics Mart
-(mart_country_analytics)
-        │
-        ▼
-Business KPIs & Dashboards
+      │
+      ▼
+Snowflake Raw Layer
+      │
+      ▼
+dbt Staging Models
+      │
+      ▼
+Fact & Dimension Models
+      │
+      ▼
+Analytics Mart
+      │
+      ▼
+Streamlit Dashboard
 ```
 
 ---
 
-## Data Flow
+## Data Model
 
-### 1. API Ingestion
+### Fact Tables
 
-A Python ingestion pipeline retrieves indicator data from the World Bank API.
+* FACT_INDICATOR_VALUES
 
-Indicators are configured through YAML:
+  * Long-format World Bank observations
+  * Grain: Country × Year × Indicator
 
-```yaml
-indicators:
-  - code: NY.GDP.MKTP.CD
-    name: GDP
+* FACT_COUNTRY_METRICS
 
-  - code: SP.POP.TOTL
-    name: Population
+  * Analytics-ready country metrics
+  * Grain: Country × Year
 
-  - code: SP.DYN.LE00.IN
-    name: Life Expectancy
+### Dimension Tables
 
-  - code: IT.NET.USER.ZS
-    name: Internet Users
-
-  - code: SL.UEM.TOTL.ZS
-    name: Unemployment
-```
-
-New indicators can be added without modifying ingestion logic.
-
----
-
-### 2. Raw Data Storage
-
-Raw API payloads are stored in Snowflake:
-
-#### RAW_API_RESPONSES
-
-Stores complete World Bank API responses as JSON.
-
-Columns:
-
-```text
-indicator_id
-payload (VARIANT)
-```
-
-This preserves the original source data and supports reproducibility.
-
----
-
-### 3. Ingestion Tracking
-
-The pipeline maintains an ingestion audit table.
-
-#### INGESTION_RUNS
-
-Tracks:
-
-* Indicator loaded
-* Year range loaded
-* Load status
-* Record counts
-* Timestamp
-
-Example:
-
-```text
-GDP
-1960-2000
-SUCCESS
-10906 records
-```
-
----
-
-## Idempotent Loading
-
-The ingestion process prevents duplicate loads.
-
-Before loading data, the pipeline checks:
-
-```text
-indicator_id
-start_year
-end_year
-```
-
-If the same range has already been successfully loaded, the request is skipped.
-
-Example:
-
-```text
-GDP 1960-2000
-```
-
-loaded once will not load again.
-
-This mirrors production-grade idempotent ingestion patterns.
-
----
-
-## dbt Modeling
-
-### Staging Layer
-
-#### stg_world_bank_observations
-
-Purpose:
-
-* Flatten JSON payloads
-* Standardize column names
-* Cast data types
-
-Grain:
-
-```text
-Country + Year + Indicator
-```
-
-Example:
-
-```text
-USA | 2000 | GDP
-USA | 2000 | Population
-USA | 2000 | Life Expectancy
-```
-
-Columns:
-
-```text
-indicator_id
-country_code
-country_name
-year
-metric_value
-```
-
----
-
-### Fact Layer
-
-#### fact_country_metrics
-
-Transforms long-format indicator data into a wide analytics-ready table.
-
-Grain:
-
-```text
-Country + Year
-```
-
-Example:
-
-```text
-USA | 2000
-```
-
-Columns:
-
-```text
-country_code
-country_name
-year
-
-GDP
-POPULATION
-LIFE_EXPECTANCY
-INTERNET_USERS
-UNEMPLOYMENT
-```
-
-Business rules are enforced here:
-
-* Aggregate entities removed
-* Blank country codes excluded
-* Country-level analytics only
-
----
+* DIM_COUNTRY
+* DIM_INDICATOR
 
 ### Analytics Mart
 
-#### mart_country_analytics
+* MART_COUNTRY_ANALYTICS
 
-Purpose:
+Includes:
 
-Provide business-ready KPIs for reporting and dashboards.
-
-Columns:
-
-```text
-country_code
-country_name
-year
-
-GDP
-POPULATION
-
-gdp_per_capita
-
-prev_year_gdp_per_capita
-
-gdp_per_capita_growth_rate
-```
+* GDP
+* Population
+* GDP Per Capita
+* Previous Year GDP Per Capita
+* GDP Per Capita Growth Rate
 
 ---
 
-## KPI Definitions
+## Features
 
-### GDP Per Capita
+### Data Ingestion
 
-```sql
-GDP / NULLIF(POPULATION, 0)
-```
+* Python-based ingestion pipeline
+* Automated API extraction
+* Incremental load tracking
+* Ingestion audit logging
 
-Measures economic output per person.
+### Analytics Engineering
 
----
+* dbt-powered transformations
+* Star schema modeling
+* Reusable SQL models
+* Data lineage visualization
 
-### GDP Per Capita Growth Rate
+### Data Quality
 
-Calculated using SQL window functions.
+* Primary key grain validation
+* Referential integrity testing
+* Null checks
+* Uniqueness constraints
 
-```sql
-LAG(gdp_per_capita)
-```
+### Analytics Dashboard
 
-Formula:
-
-```text
-(Current GDP Per Capita - Previous GDP Per Capita)
-/
-Previous GDP Per Capita
-* 100
-```
-
-Provides year-over-year economic growth.
-
----
-
-## Data Quality Framework
-
-The project includes automated dbt testing.
-
-### Schema Tests
-
-#### Staging
-
-* country_code not null
-* year not null
-* indicator_id not null
-
-#### Fact
-
-* country_code not null
-* year not null
-
-#### Mart
-
-* country_code not null
-* country_name not null
-* year not null
+* Executive Overview
+* Country Explorer
+* Country Comparison
+* Growth Analytics (planned)
+* Indicator Deep Dive (planned)
 
 ---
 
-### Custom Data Quality Tests
+## Tech Stack
 
-#### Fact Grain Validation
-
-Ensures:
-
-```text
-country_code + year
-```
-
-appears only once.
-
-Detects accidental duplication.
-
----
-
-#### Blank Country Code Validation
-
-Ensures:
-
-```text
-country_code IS NOT NULL
-```
-
-and prevents aggregate entities from entering analytics datasets.
-
----
-
-## Data Quality Investigation
-
-During development, duplicate observations were discovered in World Bank source data.
-
-Example:
-
-```text
-AFE
-1995
-Internet Users
-```
-
-appeared multiple times.
-
-Investigation traced the issue to source-level aggregate entities rather than transformation logic.
-
-The project now filters non-country entities from analytical layers while preserving raw source data.
+| Layer           | Technology     |
+| --------------- | -------------- |
+| Language        | Python         |
+| Data Source     | World Bank API |
+| Warehouse       | Snowflake      |
+| Transformations | dbt            |
+| Analytics       | SQL            |
+| Dashboard       | Streamlit      |
+| Visualization   | Plotly         |
+| Version Control | Git/GitHub     |
 
 ---
 
@@ -372,29 +129,23 @@ The project now filters non-country entities from analytical layers while preser
 ```text
 world-lens/
 │
-├── ingestion/
-│   ├── ingest_world_bank.py
-│   ├── config.yaml
-│   └── utils/
+├── src/
+│   ├── ingestion/
+│   ├── db/
+│   ├── config/
+│   └── main.py
 │
 ├── world_lens_dbt/
 │   ├── models/
-│   │
-│   ├── staging/
-│   │   ├── stg_world_bank_observations.sql
-│   │   └── schema.yml
-│   │
-│   ├── facts/
-│   │   ├── fact_country_metrics.sql
-│   │   └── schema.yml
-│   │
-│   └── marts/
-│       ├── mart_country_analytics.sql
-│       └── schema.yml
-│
+│   │   ├── staging/
+│   │   ├── dimensions/
+│   │   ├── facts/
+│   │   └── marts/
 │   └── tests/
-│       ├── fact_country_metrics_grain.sql
-│       └── no_blank_country_codes.sql
+│
+├── streamlit_app/
+│   ├── pages/
+│   └── utils/
 │
 ├── requirements.txt
 └── README.md
@@ -402,74 +153,91 @@ world-lens/
 
 ---
 
-## Tech Stack
+## Setup
 
-| Layer           | Technology     |
-| --------------- | -------------- |
-| Language        | Python 3.12    |
-| Data Warehouse  | Snowflake      |
-| Transformation  | dbt Core       |
-| Data Modeling   | SQL            |
-| Data Quality    | dbt Tests      |
-| Source System   | World Bank API |
-| Version Control | Git & GitHub   |
+### Clone Repository
+
+```bash
+git clone <repository-url>
+cd world-lens
+```
+
+### Install Dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+### Configure Environment
+
+Create a `.env` file:
+
+```env
+SNOWFLAKE_ACCOUNT=
+SNOWFLAKE_USER=
+SNOWFLAKE_PASSWORD=
+SNOWFLAKE_ROLE=
+SNOWFLAKE_WAREHOUSE=
+SNOWFLAKE_DATABASE=WORLD_LENS
+SNOWFLAKE_SCHEMA=RAW
+```
 
 ---
 
-## Key Concepts Demonstrated
+## Usage
 
-### Data Engineering
+### 1. Ingest Data
 
-* API ingestion
-* Idempotent loading
-* Audit logging
-* Snowflake data warehousing
-* JSON processing
-* Pipeline design
+```bash
+python -m src.main
+```
 
-### Analytics Engineering
+### 2. Build Analytics Models
 
-* dbt modeling
-* Staging → Fact → Mart architecture
-* KPI development
-* Data quality testing
-* Grain validation
-* Business rule enforcement
+```bash
+cd world_lens_dbt
 
-### SQL
+dbt run
+dbt test
 
-* CTEs
-* Window Functions
-* LAG()
-* Conditional Aggregation
-* Data Quality Validation
+cd ..
+```
+
+### 3. Launch Dashboard
+
+```bash
+streamlit run streamlit_app/app.py
+```
+
+---
+
+## Data Quality Coverage
+
+Current dbt tests include:
+
+* Fact table grain validation
+* Referential integrity checks
+* Dimension uniqueness tests
+* Null validation tests
+* Business rule validation
+
+All dbt tests currently pass successfully.
 
 ---
 
 ## Future Enhancements
 
-### Planned
-
 * Incremental dbt models
-* Country dimension table
-* Additional World Bank indicators
-* Dashboard layer (Streamlit)
-* Automated orchestration
+* Historical trend forecasting
+* Automated orchestration with Airflow
 * CI/CD pipeline
-* Data freshness monitoring
-
-### Potential KPIs
-
-* Population Growth Rate
-* GDP Growth Rate
-* Internet Adoption Growth
-* Unemployment Trends
-* Regional Economic Comparisons
+* Containerized deployment
+* Real-time data refresh
 
 ---
 
-## Why This Project Matters
+## Author
 
-World Lens demonstrates how raw external data can be transformed into a reliable analytics platform using modern Data Engineering and Analytics Engineering practices.
+Vedant Shinde
 
-Rather than focusing only on ingestion, the project emphasizes data modeling, data quality, business metrics, and trustworthy analytics—the same principles used in production data platforms.
+Built as a portfolio project to demonstrate modern Data Engineering, Analytics Engineering, and Data Platform development practices.
