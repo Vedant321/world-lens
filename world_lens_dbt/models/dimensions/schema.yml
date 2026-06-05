@@ -1,0 +1,28 @@
+version: 2
+
+models:
+  - name: dim_country
+    columns:
+      - name: country_code
+        tests:
+          - not_null
+          - unique
+
+      - name: country_name
+        tests:
+          - not_null
+
+  - name: dim_indicator
+    columns:
+      - name: indicator_id
+        tests:
+          - not_null
+          - unique
+
+      - name: indicator_name
+        tests:
+          - not_null
+
+      - name: category
+        tests:
+          - not_null
