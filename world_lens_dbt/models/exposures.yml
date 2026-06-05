@@ -1,0 +1,19 @@
+version: 2
+
+exposures:
+
+  - name: world_lens_dashboard
+    type: dashboard
+
+    maturity: medium
+
+    owner:
+      name: Vedant Shinde
+
+    depends_on:
+      - ref('mart_country_analytics')
+
+    description: |
+      World Lens analytics dashboard used to explore
+      GDP, population, life expectancy, internet usage,
+      unemployment, and GDP per capita trends across countries.

@@ -1,3 +1,5 @@
+{{ config(materialized='table') }}
+
 WITH base_gdp_metrics AS (
 
     SELECT

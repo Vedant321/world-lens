@@ -1,3 +1,4 @@
+{{ config(materialized='table') }}
 WITH country_only AS (
 
     SELECT *

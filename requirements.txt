@@ -3,3 +3,8 @@ python-dotenv
 snowflake-connector-python
 pyyaml
 dbt-snowflake
+streamlit
+plotly
+python-dotenv
+snowflake-connector-python
+pandas
