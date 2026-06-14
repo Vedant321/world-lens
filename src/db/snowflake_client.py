@@ -6,6 +6,7 @@ from datetime import datetime
 
 from src.config.settings import Settings
 
+
 class SnowflakeClient:
 
     def get_connection(self):
@@ -19,7 +20,12 @@ class SnowflakeClient:
             schema=Settings.SNOWFLAKE_SCHEMA,
         )
 
-    def already_loaded(self, indicator_id, requested_start_year, requested_end_year):
+    def already_loaded(
+        self,
+        indicator_id,
+        requested_start_year,
+        requested_end_year
+    ):
 
         conn = self.get_connection()
 
@@ -28,12 +34,13 @@ class SnowflakeClient:
 
             cursor.execute(
                 """
-                SELECT COUNT(*)
+                SELECT 1
                 FROM INGESTION_RUNS
                 WHERE indicator_id = %s
-                AND status = 'SUCCESS'
-                AND start_year <= %s
-                AND end_year >= %s
+                  AND status = 'SUCCESS'
+                  AND start_year <= %s
+                  AND end_year >= %s
+                LIMIT 1
                 """,
                 (
                     indicator_id,
@@ -42,19 +49,42 @@ class SnowflakeClient:
                 )
             )
 
-            return cursor.fetchone()[0] > 0
+            return cursor.fetchone() is not None
 
         finally:
             cursor.close()
             conn.close()
 
-
-    def record_success(self, indicator_id, start_year, end_year, rows_loaded):
+    def save_ingestion_run(
+        self,
+        indicator_id,
+        start_year,
+        end_year,
+        payload,
+        rows_loaded
+    ):
 
         conn = self.get_connection()
 
         try:
             cursor = conn.cursor()
+
+            cursor.execute(
+                """
+                INSERT INTO RAW_API_RESPONSES
+                (
+                    indicator_id,
+                    payload
+                )
+                SELECT
+                    %s,
+                    PARSE_JSON(%s)
+                """,
+                (
+                    indicator_id,
+                    json.dumps(payload)
+                )
+            )
 
             cursor.execute(
                 """
@@ -69,7 +99,15 @@ class SnowflakeClient:
                     loaded_at
                 )
                 VALUES
-                (%s, %s, %s, %s, %s, %s, %s)
+                (
+                    %s,
+                    %s,
+                    %s,
+                    %s,
+                    %s,
+                    %s,
+                    %s
+                )
                 """,
                 (
                     str(uuid4()),
@@ -84,30 +122,12 @@ class SnowflakeClient:
 
             conn.commit()
 
-        finally:
-            cursor.close()
-            conn.close()
+        except Exception:
 
-
-
-    def insert_raw_payload(self, indicator_id, payload):
-
-        conn = self.get_connection()
-
-        try:
-            cursor = conn.cursor()
-
-            cursor.execute(
-                """
-                INSERT INTO RAW_API_RESPONSES
-                (indicator_id, payload)
-                SELECT %s, PARSE_JSON(%s)
-                """,
-                (indicator_id, json.dumps(payload))
-            )
-
-            conn.commit()
+            conn.rollback()
+            raise
 
         finally:
+
             cursor.close()
             conn.close()
